@@ -32,7 +32,14 @@ def test_imports():
         import flask
         print(f"✓ Flask {flask.__version__} imported successfully")
         
-        import werkzeug
+import flask
+        print(f"✓ Flask {flask.__version__} imported successfully")
+        
+        from werkzeug import __version__ as werkzeug_version  # Import only the required version information
+        print(f"✓ Werkzeug {werkzeug_version} imported successfully")
+        
+        # Test that our app can be imported
+        import app
         print(f"✓ Werkzeug {werkzeug.__version__} imported successfully")
         
         # Test that our app can be imported
