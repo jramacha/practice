@@ -114,7 +114,15 @@ def run_tests():
         # Run the test suite
         result = subprocess.run([
             sys.executable, '-m', 'unittest', 'test_app.py', '-v'
-        ], capture_output=True, text=True, cwd='/workspace')
+try:
+        # Run the test suite
+        # import os
+        result = subprocess.run([
+            sys.executable, '-m', 'unittest', 'test_app.py', '-v'
+        ], capture_output=True, text=True, cwd=os.getcwd())
+        
+        if result.returncode == 0:
+            print("✓ All tests passed successfully")
         
         if result.returncode == 0:
             print("✓ All tests passed successfully")
@@ -144,8 +152,105 @@ def validate_docstrings():
     print("\nValidating docstrings...")
     
     try:
+bool: True if docstrings are present, False otherwise
+    """
+    print("
+Validating docstrings...")
+    
+    try:
+        # from app import home, health  # Import specific functions from app module
+        # from test_app import FlaskAppTests  # Import specific class from test_app module
+        
+        # Check app.py docstrings
+        if app.__doc__:
+            print("✓ Module docstring present in app.py")
+        else:
+            print("✗ Module docstring missing in app.py")
+            return False
+            
+        if home.__doc__:
+            print("✓ Docstring present for home() function")
+        else:
+            print("✗ Docstring missing for home() function")
+            return False
+            
+        if health.__doc__:
+            print("✓ Docstring present for health() function")
+        else:
+            print("✗ Docstring missing for health() function")
+            return False
+            
+        # Check test_app.py docstrings
+        if FlaskAppTests.__doc__:
+            print("✓ Class docstring present for FlaskAppTests")
+        else:
+            print("✗ Class docstring missing for FlaskAppTests")
+            return False
+            
+        # Check method docstrings
+        methods_to_check = ['setUp', 'test_home_endpoint', 'test_health_endpoint']
+        for method_name in methods_to_check:
+            method = getattr(FlaskAppTests, method_name)
+            if method.__doc__:
+                print(f"✓ Docstring present for {method_name}() method")
+            else:
+                print(f"✗ Docstring missing for {method_name}() method")
+                return False
+def validate_docstrings():
+    """
+    Validate that docstrings have been added to all functions and classes.
+    
+    Returns:
+        bool: True if docstrings are present, False otherwise
+    """
+    print("
+Validating docstrings...")
+    
+    try:
         import app
-        import test_app
+        from test_app import FlaskAppTests  # Import specific class from test_app
+        
+        # Check app.py docstrings
+        if app.__doc__:
+            print("✓ Module docstring present in app.py")
+        else:
+            print("✗ Module docstring missing in app.py")
+            return False
+            
+        if app.home.__doc__:
+            print("✓ Docstring present for home() function")
+        else:
+            print("✗ Docstring missing for home() function")
+            return False
+            
+        if app.health.__doc__:
+            print("✓ Docstring present for health() function")
+        else:
+            print("✗ Docstring missing for health() function")
+            return False
+            
+        # Check test_app.py docstrings
+        if FlaskAppTests.__doc__:
+            print("✓ Class docstring present for FlaskAppTests")
+        else:
+            print("✗ Class docstring missing for FlaskAppTests")
+            return False
+            
+        # Check method docstrings
+        methods_to_check = ['setUp', 'test_home_endpoint', 'test_health_endpoint']
+        for method_name in methods_to_check:
+            method = getattr(FlaskAppTests, method_name)
+            if method.__doc__:
+                print(f"✓ Docstring present for {method_name}() method")
+            else:
+                print(f"✗ Docstring missing for {method_name}() method")
+                return False
+                
+        return True
+        
+    except Exception as e:
+        print(f"✗ Error validating docstrings: {e}")
+        return False
         
         # Check app.py docstrings
         if app.__doc__:
@@ -182,7 +287,16 @@ def validate_docstrings():
         # Check method docstrings
         methods_to_check = ['setUp', 'test_home_endpoint', 'test_health_endpoint']
         for method_name in methods_to_check:
-            method = getattr(test_app.FlaskAppTests, method_name)
+# Check method docstrings
+        methods_to_check = ['setUp', 'test_home_endpoint', 'test_health_endpoint']
+        for method_name in methods_to_check:
+            method = getattr(test_app.FlaskAppTests, method_name, None)
+            if method is None:
+                print(f"✗ Method {method_name}() not found in FlaskAppTests")
+                return False
+            if method.__doc__:
+                print(f"✓ Docstring present for {method_name}() method")
+            else:
             if method.__doc__:
                 print(f"✓ Docstring present for {method_name}() method")
             else:
