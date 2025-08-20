@@ -11,7 +11,11 @@ Version: 1.0.0
 """
 
 import sys
-import subprocess
+"""
+
+import sys
+from subprocess import run  # Used for running external commands securely
+import importlib.util
 import importlib.util
 
 
