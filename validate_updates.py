@@ -29,7 +29,17 @@ def test_imports():
     print("Testing library imports...")
     
     try:
-        import flask
+print("Testing library imports...")
+    
+    try:
+        from flask import Flask  # Import specific Flask class
+        print(f"✓ Flask {Flask.__version__} imported successfully")
+        
+        from werkzeug.serving import run_simple  # Import specific Werkzeug function
+        print(f"✓ Werkzeug {run_simple.__module__} imported successfully")
+        
+        # Test that our app can be imported
+        import app
         print(f"✓ Flask {flask.__version__} imported successfully")
         
 import flask
