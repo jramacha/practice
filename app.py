@@ -10,12 +10,49 @@ Version: 1.0.0
 """
 
 from flask import Flask, jsonify
+import sqlite3
+from flask import g
+
 
 app = Flask(__name__)
 
+DATABASE = 'hits.db'
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    return db
+
+def init_db():
+    with app.app_context():
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute('''CREATE TABLE IF NOT EXISTS hits (
+            endpoint TEXT PRIMARY KEY,
+            count INTEGER DEFAULT 0
+        )''')
+        for ep in ['/', '/health']:
+            cursor.execute('INSERT OR IGNORE INTO hits (endpoint, count) VALUES (?, ?)', (ep, 0))
+        db.commit()
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+
+
+def increment_hit(endpoint):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('UPDATE hits SET count = count + 1 WHERE endpoint = ?', (endpoint,))
+    db.commit()
 
 @app.route('/')
 def home():
+    increment_hit('/')
     """
     Home endpoint that returns a welcome message.
     
@@ -43,6 +80,7 @@ def home():
     })
 
 
+
 @app.route('/health')
 def health():
     """
@@ -64,10 +102,20 @@ def health():
             "status": "healthy"
         }
     """
+    increment_hit('/health')
     return jsonify({
         "status": "healthy"
     })
 
+@app.route('/hits')
+def hits():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute('SELECT endpoint, count FROM hits')
+    data = {row[0]: row[1] for row in cursor.fetchall()}
+    return jsonify(data)
+
 if __name__ == '__main__':
+    init_db()
     # Run on all interfaces (0.0.0.0) to be accessible from outside the container
     app.run(host='0.0.0.0', port=5000, debug=True)
