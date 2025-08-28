@@ -11,6 +11,7 @@ Version: 1.0.0
 
 import sqlite3
 import threading
+import logging
 from flask import Flask, jsonify
 
 app = Flask(__name__)
@@ -18,6 +19,13 @@ app = Flask(__name__)
 # Database configuration
 DATABASE_PATH = 'hits.db'
 db_lock = threading.Lock()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 def init_database():
@@ -31,15 +39,19 @@ def init_database():
         - endpoint (TEXT PRIMARY KEY): The endpoint path (e.g., '/', '/health')
         - hits (INTEGER): The number of hits for that endpoint
     """
-    with sqlite3.connect(DATABASE_PATH) as conn:
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hits (
-                endpoint TEXT PRIMARY KEY,
-                hits INTEGER DEFAULT 0
-            )
-        ''')
-        conn.commit()
+    try:
+        with sqlite3.connect(DATABASE_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS hits (
+                    endpoint TEXT PRIMARY KEY,
+                    hits INTEGER DEFAULT 0
+                )
+            ''')
+            conn.commit()
+        logger.info("Database initialized successfully")
+    except sqlite3.Error as e:
+        logger.error(f"Failed to initialize database: {e}")
 
 
 def increment_hit_count(endpoint):
@@ -65,8 +77,10 @@ def increment_hit_count(endpoint):
                     VALUES (?, COALESCE((SELECT hits FROM hits WHERE endpoint = ?), 0) + 1)
                 ''', (endpoint, endpoint))
                 conn.commit()
+        logger.debug(f"Hit count incremented for endpoint: {endpoint}")
         return True
-    except sqlite3.Error:
+    except sqlite3.Error as e:
+        logger.error(f"Failed to increment hit count for {endpoint}: {e}")
         # Gracefully handle database errors without affecting endpoint functionality
         return False
 
@@ -85,8 +99,11 @@ def get_hit_counts():
                 cursor = conn.cursor()
                 cursor.execute('SELECT endpoint, hits FROM hits ORDER BY endpoint')
                 results = cursor.fetchall()
-                return {endpoint: hits for endpoint, hits in results}
-    except sqlite3.Error:
+                hit_counts = {endpoint: hits for endpoint, hits in results}
+                logger.debug(f"Retrieved hit counts: {hit_counts}")
+                return hit_counts
+    except sqlite3.Error as e:
+        logger.error(f"Failed to retrieve hit counts: {e}")
         return {}
 
 
@@ -117,6 +134,7 @@ def home():
             "status": "success"
         }
     """
+    logger.info("Home endpoint accessed")
     # Track hit for this endpoint
     increment_hit_count('/')
     
@@ -148,6 +166,7 @@ def health():
             "status": "healthy"
         }
     """
+    logger.info("Health endpoint accessed")
     # Track hit for this endpoint
     increment_hit_count('/health')
     
@@ -182,6 +201,7 @@ def hits():
             "total_hits": 8
         }
     """
+    logger.info("Hits endpoint accessed")
     hit_counts = get_hit_counts()
     total_hits = sum(hit_counts.values()) if hit_counts else 0
     
